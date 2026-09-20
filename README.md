@@ -1,11 +1,19 @@
-# Server deployment checklist
+# RN Rachan Works
 
-## Required environment
-- `DATABASE_URL`: PostgreSQL connection string
-- `SESSION_SECRET`: random secret of at least 32 characters; never commit it
-- `APP_ORIGIN`: exact public HTTPS origin, for example `https://app.example.com`
+**RN Works Platform** — Construction • Maintenance • Assurance
+
+ระบบจัดการงานก่อสร้าง งานซ่อมบำรุง งานตรวจรับ หลักฐานคุณภาพ และ workflow การจัดการเงินค้ำประกัน
+
+## Brand
+
+- **ชื่อแบรนด์:** RN Rachan Works
+- **ชื่อระบบ:** RN Works Platform
+- **ชื่อเรียกสั้น:** RN Works หรือ Rachan
+- **ที่มา:** RN จากผู้ก่อตั้ง และ Rachan จากชื่อ รชานนท์ หน่อนิล
+- **คำโปรย:** Construction • Maintenance • Assurance
 
 ## Deploy
+
 ```bash
 npm ci
 npx prisma generate
@@ -14,9 +22,14 @@ npm run build
 npm run start
 ```
 
-For a new database only, use `npx prisma db push` once, then create and commit a migration with `npx prisma migrate dev --name initial` before production. Run `npx prisma db seed` only for a controlled demo/staging environment.
+## Required environment
+
+- `DATABASE_URL`: PostgreSQL connection string
+- `SESSION_SECRET`: random secret of at least 32 characters; never commit it
+- `APP_ORIGIN`: exact public HTTPS origin, for example `https://app.example.com`
 
 ## Production requirements still outside this repository
+
 - Use HTTPS, a managed PostgreSQL database, backups and monitoring.
 - Move uploads from `public/uploads` to private S3-compatible object storage with signed URLs and malware scanning.
 - Integrate a real payment provider; never treat a database status update as a bank transfer. Confirm release using provider webhooks and idempotency keys.
