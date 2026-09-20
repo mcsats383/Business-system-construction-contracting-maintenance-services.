@@ -1,0 +1,95 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum BookingStatus { ASSIGNED IN_PROGRESS QC_SUBMITTED WAITING_CLIENT_ACCEPTANCE CLIENT_APPROVED RELEASE_PENDING COMPLETED DISPUTED CANCELLED }
+enum PaymentStatus { HOLD RELEASE_PENDING RELEASED REFUNDED DISPUTED }
+enum ChecklistStatus { SUBMITTED UNDER_REVIEW APPROVED REJECTED DISPUTED }
+enum UserRole { ADMIN TECHNICIAN CLIENT }
+
+model User {
+  id           Int          @id @default(autoincrement())
+  name         String
+  email        String       @unique
+  role         UserRole
+  technician   Technician?
+  bookings     Booking[]    @relation("ClientBookings")
+  reviewed     Checklist[]  @relation("Reviewer")
+  auditEvents  AuditEvent[]
+  createdAt    DateTime     @default(now())
+}
+
+model Technician {
+  id           Int          @id @default(autoincrement())
+  userId       Int          @unique
+  user         User         @relation(fields: [userId], references: [id])
+  bookings     Booking[]    @relation("AssignedTechnician")
+  checklists   Checklist[]
+}
+
+model Booking {
+  id             Int          @id @default(autoincrement())
+  code           String       @unique
+  clientId       Int
+  technicianId   Int?
+  status         BookingStatus @default(ASSIGNED)
+  title          String
+  address        String
+  client         User         @relation("ClientBookings", fields: [clientId], references: [id])
+  technician     Technician?  @relation("AssignedTechnician", fields: [technicianId], references: [id])
+  payment        Payment?
+  checklists     Checklist[]
+  auditEvents    AuditEvent[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model Payment {
+  id          Int           @id @default(autoincrement())
+  bookingId   Int           @unique
+  amount      Decimal       @db.Decimal(12, 2)
+  status      PaymentStatus @default(HOLD)
+  booking     Booking       @relation(fields: [bookingId], references: [id])
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model Checklist {
+  id                    Int             @id @default(autoincrement())
+  bookingId             Int
+  technicianId          Int
+  status                ChecklistStatus @default(SUBMITTED)
+  safetyChecked         Boolean
+  rootCauseIdentified   Boolean
+  materialStandardPassed Boolean
+  leakPressureTested    Boolean
+  siteCleaned           Boolean
+  beforePhotoUrl        String
+  afterPhotoUrl         String
+  engineerNote          String?
+  clientSignatureUrl    String?
+  reviewedById          Int?
+  submittedAt           DateTime        @default(now())
+  reviewedAt            DateTime?
+  booking               Booking         @relation(fields: [bookingId], references: [id])
+  technician            Technician      @relation(fields: [technicianId], references: [id])
+  reviewedBy            User?           @relation("Reviewer", fields: [reviewedById], references: [id])
+  @@index([bookingId, status])
+}
+
+model AuditEvent {
+  id        Int      @id @default(autoincrement())
+  bookingId Int?
+  actorId   Int?
+  action    String
+  metadata  Json?
+  createdAt DateTime @default(now())
+  booking   Booking? @relation(fields: [bookingId], references: [id])
+  actor     User?    @relation(fields: [actorId], references: [id])
+  @@index([bookingId, createdAt])
+}
