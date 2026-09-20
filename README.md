@@ -1,39 +1,25 @@
-# Engineering Audit & Escrow
+# Server deployment checklist
 
-ระบบจัดการงานก่อสร้าง/ซ่อมบำรุงที่มี QC, หลักฐานภาพก่อน-หลังและ Escrow workflow
+## Required environment
+- `DATABASE_URL`: PostgreSQL connection string
+- `SESSION_SECRET`: random secret of at least 32 characters; never commit it
+- `APP_ORIGIN`: exact public HTTPS origin, for example `https://app.example.com`
 
-## Login demo
-
-บัญชีตัวอย่างที่ใช้ทดสอบระบบ:
-- admin@example.com / admin123
-- tech@example.com / tech123
-- client@example.com / client123
-
-## Workflow
-
-`HOLD → WAITING_CLIENT_ACCEPTANCE → RELEASE_PENDING → RELEASED`
-
-- ช่างส่ง QC จาก `/checklist`
-- ลูกค้าเช็คภาพและตรวจรับจาก `/approval`
-- Admin ตรวจคิวและปล่อยเงินจาก `/admin`
-- ทุกการเปลี่ยนสถานะถูกบันทึกใน `AuditEvent`
-
-## เริ่มต้นใช้งาน
-
+## Deploy
 ```bash
-cp .env.example .env
-npm install
-npx prisma db push
-npx prisma db seed
-npm run dev
+npm ci
+npx prisma generate
+npx prisma migrate deploy
+npm run build
+npm run start
 ```
 
-ไปที่:
-- http://localhost:3000/login
-- http://localhost:3000/checklist
-- http://localhost:3000/approval
-- http://localhost:3000/admin
+For a new database only, use `npx prisma db push` once, then create and commit a migration with `npx prisma migrate dev --name initial` before production. Run `npx prisma db seed` only for a controlled demo/staging environment.
 
-## ข้อจำกัดก่อน Production
-
-เวอร์ชันนี้ใช้งานแบบ session cookie แบบง่ายสำหรับ demo เท่านั้น และยังไม่ได้เชื่อม Auth Provider จริง เช่น NextAuth, Auth.js หรือ SSO แบบ Production ควรย้ายรูปไป Object Storage, เพิ่ม CSRF, rate limit, signed URL, payment provider webhook และ notification provider (LINE OA / Email)
+## Production requirements still outside this repository
+- Use HTTPS, a managed PostgreSQL database, backups and monitoring.
+- Move uploads from `public/uploads` to private S3-compatible object storage with signed URLs and malware scanning.
+- Integrate a real payment provider; never treat a database status update as a bank transfer. Confirm release using provider webhooks and idempotency keys.
+- Add a real email/LINE provider with secrets stored in the deployment platform.
+- Add rate limiting, centralized logs, alerting, dependency scanning and automated tests.
+- Replace demo seed passwords and rotate `SESSION_SECRET` before launch.

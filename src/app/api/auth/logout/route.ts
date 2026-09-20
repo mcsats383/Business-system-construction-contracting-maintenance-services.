@@ -1,14 +1,4 @@
 import { NextResponse } from 'next/server';
-import { clearSessionCookie } from '@/src/lib/auth';
-
-export async function POST() {
-  const response = NextResponse.json({ success: true, message: 'Logged out' });
-  clearSessionCookie(response);
-  return response;
-}
-
-export async function GET() {
-  const response = NextResponse.redirect(new URL('/login', 'http://localhost:3000'));
-  clearSessionCookie(response);
-  return response;
-}
+import { clearSessionCookie, requireSameOrigin } from '@/src/lib/auth';
+export async function POST(request: Request) { const csrf = requireSameOrigin(request); if (csrf) return csrf; const response = NextResponse.json({ success: true }); clearSessionCookie(response); return response; }
+export async function GET(request: Request) { const response = NextResponse.redirect(new URL('/login', process.env.APP_ORIGIN || 'http://localhost:3000')); clearSessionCookie(response); return response; }
